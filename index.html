@@ -8,26 +8,20 @@
 </head>
 <body>
 
-  <!-- ===== TOP NAVIGATION (only visible when logged in) ===== -->
-  <header id="navbar" class="navbar hidden">
-    <div class="brand">💪 Transform<span>100</span></div>
-    <nav class="nav-links">
-      <button class="nav-btn active" data-view="dashboard">Overview</button>
-      <button class="nav-btn" data-view="diet">Diet Plan</button>
-      <button class="nav-btn" data-view="workout">Workout Plan</button>
-      <button class="nav-btn" data-view="progress">Progress</button>
-      <button class="nav-btn" data-view="profile">Profile</button>
-    </nav>
-    <button id="logoutBtn" class="logout-btn">Log out</button>
-  </header>
-
-  <main class="container">
-
-    <!-- ===== AUTH SCREEN (login / signup) ===== -->
-    <section id="authView" class="view">
-      <div class="hero">
-        <h1>💪 Transform<span>100</span></h1>
-        <p class="tagline">Build your personalized diet &amp; workout plan. Track every step toward your goal.</p>
+  <!-- ====================================================== -->
+  <!-- AUTH SCREEN (full-screen motivational hero)            -->
+  <!-- ====================================================== -->
+  <section id="authScreen" class="auth-screen">
+    <div class="auth-overlay"></div>
+    <div class="auth-content">
+      <div class="auth-left">
+        <h1 class="logo">💪 Transform<span>100</span></h1>
+        <p class="slogan" id="authSlogan">The body achieves what the mind believes.</p>
+        <ul class="auth-bullets">
+          <li>🍎 Personalized diet &amp; calorie targets</li>
+          <li>🏋️ Weight training &amp; 🏃 cardio plans</li>
+          <li>💧 Water tracking &amp; 📈 progress charts</li>
+        </ul>
       </div>
 
       <div class="card auth-card">
@@ -35,7 +29,6 @@
           <button id="loginTab" class="tab active">Log in</button>
           <button id="signupTab" class="tab">Sign up</button>
         </div>
-
         <form id="authForm">
           <label>Username
             <input type="text" id="authUsername" autocomplete="username" placeholder="e.g. alex" required />
@@ -48,132 +41,185 @@
         </form>
         <p class="hint">Your account is stored privately in this browser only.</p>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- ===== PROFILE / GOALS SETUP ===== -->
-    <section id="profileView" class="view hidden">
-      <h2>Your Profile &amp; Goals</h2>
-      <p class="subtitle">We use these to calculate your calories, macros, and training plan.</p>
+  <!-- ====================================================== -->
+  <!-- APP SHELL (sidebar + content), shown once logged in    -->
+  <!-- ====================================================== -->
+  <div id="appShell" class="app-shell hidden">
 
-      <form id="profileForm" class="card">
-        <div class="grid-2">
-          <label>Age
-            <input type="number" id="age" min="13" max="100" required />
-          </label>
-          <label>Biological sex
-            <select id="sex" required>
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-            </select>
-          </label>
-          <label>Height (cm)
-            <input type="number" id="height" min="120" max="230" required />
-          </label>
-          <label>Current weight (kg)
-            <input type="number" id="weight" min="30" max="300" step="0.1" required />
-          </label>
-          <label>Goal weight (kg)
-            <input type="number" id="goalWeight" min="30" max="300" step="0.1" required />
-          </label>
-          <label>Primary goal
-            <select id="goal" required>
-              <option value="lose">Lose fat</option>
-              <option value="maintain">Maintain / recomp</option>
-              <option value="gain">Build muscle</option>
-            </select>
-          </label>
-          <label>Activity level
-            <select id="activity" required>
-              <option value="1.2">Sedentary (little/no exercise)</option>
-              <option value="1.375">Lightly active (1–3 days/week)</option>
-              <option value="1.55" selected>Moderately active (3–5 days/week)</option>
-              <option value="1.725">Very active (6–7 days/week)</option>
-              <option value="1.9">Athlete (intense daily training)</option>
-            </select>
-          </label>
-          <label>Training days per week
-            <select id="trainingDays" required>
-              <option value="3">3 days</option>
-              <option value="4">4 days</option>
-              <option value="5">5 days</option>
-              <option value="6">6 days</option>
-            </select>
-          </label>
-          <label>Equipment available
-            <select id="equipment" required>
-              <option value="gym">Full gym</option>
-              <option value="home">Home (dumbbells/bands)</option>
-              <option value="bodyweight">Bodyweight only</option>
-            </select>
-          </label>
-          <label>Dietary preference
-            <select id="diet" required>
-              <option value="none">No restriction</option>
-              <option value="vegetarian">Vegetarian</option>
-              <option value="vegan">Vegan</option>
-            </select>
-          </label>
+    <!-- ---------- Left side menu ---------- -->
+    <aside class="sidebar">
+      <div class="side-brand">💪 Transform<span>100</span></div>
+      <nav class="side-nav">
+        <button class="side-btn active" data-view="dashboard"><span>🏠</span> Dashboard</button>
+        <button class="side-btn" data-view="diet"><span>🍎</span> Diet</button>
+        <button class="side-btn" data-view="cardio"><span>🏃</span> Cardio</button>
+        <button class="side-btn" data-view="weights"><span>🏋️</span> Weight Training</button>
+        <button class="side-btn" data-view="water"><span>💧</span> Water</button>
+        <button class="side-btn" data-view="progress"><span>📈</span> Progress</button>
+        <button class="side-btn" data-view="profile"><span>⚙️</span> Profile</button>
+      </nav>
+      <button id="logoutBtn" class="side-logout">↩ Log out</button>
+    </aside>
+
+    <!-- ---------- Main content ---------- -->
+    <main class="content">
+
+      <!-- ===== DASHBOARD ===== -->
+      <section id="dashboardView" class="view">
+        <div class="hero-banner banner-hero">
+          <div class="hero-banner-text">
+            <p class="eyebrow">Welcome back, <span id="dashName">friend</span> 👋</p>
+            <h2 class="hero-slogan" id="dashSlogan">Push yourself — no one else will do it for you.</h2>
+          </div>
         </div>
-        <p id="profileError" class="error hidden"></p>
-        <button type="submit" class="btn-primary">Save &amp; generate my plan</button>
-      </form>
-    </section>
 
-    <!-- ===== DASHBOARD / OVERVIEW ===== -->
-    <section id="dashboardView" class="view hidden">
-      <h2>Welcome back, <span id="dashName">friend</span> 👋</h2>
-      <div class="stat-grid" id="statGrid"><!-- filled by JS --></div>
-      <div class="card">
-        <h3>Your targets</h3>
-        <div id="targetSummary"><!-- filled by JS --></div>
-      </div>
-    </section>
+        <div class="stat-grid" id="statGrid"><!-- filled by JS --></div>
 
-    <!-- ===== DIET PLAN ===== -->
-    <section id="dietView" class="view hidden">
-      <h2>Your Diet Plan</h2>
-      <p class="subtitle" id="dietIntro"></p>
-      <div id="dietPlan"><!-- filled by JS --></div>
-    </section>
+        <div class="card">
+          <h3>Your daily targets</h3>
+          <div id="targetSummary"><!-- filled by JS --></div>
+        </div>
 
-    <!-- ===== WORKOUT PLAN ===== -->
-    <section id="workoutView" class="view hidden">
-      <h2>Your Workout Plan</h2>
-      <p class="subtitle" id="workoutIntro"></p>
-      <div id="workoutPlan"><!-- filled by JS --></div>
-    </section>
+        <div class="quick-grid" id="quickGrid"><!-- today's snapshot, filled by JS --></div>
+      </section>
 
-    <!-- ===== PROGRESS TRACKING ===== -->
-    <section id="progressView" class="view hidden">
-      <h2>Track Your Progress</h2>
-      <p class="subtitle">Log your weight regularly to watch the trend toward your goal.</p>
+      <!-- ===== DIET ===== -->
+      <section id="dietView" class="view hidden">
+        <div class="hero-banner banner-diet">
+          <div class="hero-banner-text"><h2>🍎 Your Diet Plan</h2><p id="dietIntro"></p></div>
+        </div>
 
-      <form id="progressForm" class="card inline-form">
-        <label>Date
-          <input type="date" id="logDate" required />
-        </label>
-        <label>Weight (kg)
-          <input type="number" id="logWeight" step="0.1" min="30" max="300" required />
-        </label>
-        <button type="submit" class="btn-primary">Add entry</button>
-      </form>
+        <div id="dietPlan"><!-- filled by JS --></div>
 
-      <div class="card">
-        <h3>Weight over time</h3>
-        <canvas id="progressChart" width="800" height="320"></canvas>
-        <p id="progressEmpty" class="hint">No entries yet — add your first weigh-in above.</p>
-      </div>
+        <div class="card">
+          <h3>📝 Today's food log</h3>
+          <form id="mealForm" class="inline-form">
+            <label>Food
+              <input type="text" id="mealName" placeholder="e.g. Chicken & rice" required />
+            </label>
+            <label>Calories
+              <input type="number" id="mealKcal" min="1" max="3000" placeholder="kcal" required />
+            </label>
+            <button type="submit" class="btn-primary">Add</button>
+          </form>
+          <div id="calorieBar"><!-- filled by JS --></div>
+          <ul class="food-list" id="mealLog"><!-- filled by JS --></ul>
+        </div>
+      </section>
 
-      <div class="card">
-        <h3>History</h3>
-        <table id="progressTable" class="table">
-          <thead><tr><th>Date</th><th>Weight</th><th>Change</th><th></th></tr></thead>
-          <tbody><!-- filled by JS --></tbody>
-        </table>
-      </div>
-    </section>
+      <!-- ===== CARDIO ===== -->
+      <section id="cardioView" class="view hidden">
+        <div class="hero-banner banner-cardio">
+          <div class="hero-banner-text"><h2>🏃 Cardio Plan</h2><p id="cardioIntro"></p></div>
+        </div>
+        <div id="cardioPlan"><!-- filled by JS --></div>
+      </section>
 
-  </main>
+      <!-- ===== WEIGHT TRAINING ===== -->
+      <section id="weightsView" class="view hidden">
+        <div class="hero-banner banner-weights">
+          <div class="hero-banner-text"><h2>🏋️ Weight Training</h2><p id="workoutIntro"></p></div>
+        </div>
+
+        <div class="card streak-card" id="streakCard"><!-- filled by JS --></div>
+        <div id="workoutPlan"><!-- filled by JS --></div>
+      </section>
+
+      <!-- ===== WATER ===== -->
+      <section id="waterView" class="view hidden">
+        <div class="hero-banner banner-water">
+          <div class="hero-banner-text"><h2>💧 Water Tracker</h2><p id="waterIntro"></p></div>
+        </div>
+        <div class="card water-card" id="waterCard"><!-- filled by JS --></div>
+      </section>
+
+      <!-- ===== PROGRESS ===== -->
+      <section id="progressView" class="view hidden">
+        <div class="hero-banner banner-weights">
+          <div class="hero-banner-text"><h2>📈 Track Your Progress</h2><p>Log your weight to watch the trend toward your goal.</p></div>
+        </div>
+
+        <form id="progressForm" class="card inline-form">
+          <label>Date <input type="date" id="logDate" required /></label>
+          <label>Weight (kg) <input type="number" id="logWeight" step="0.1" min="30" max="300" required /></label>
+          <button type="submit" class="btn-primary">Add entry</button>
+        </form>
+
+        <div class="card">
+          <h3>Weight over time</h3>
+          <canvas id="progressChart" width="800" height="320"></canvas>
+          <p id="progressEmpty" class="hint">No entries yet — add your first weigh-in above.</p>
+        </div>
+
+        <div class="card">
+          <h3>History</h3>
+          <table id="progressTable" class="table">
+            <thead><tr><th>Date</th><th>Weight</th><th>Change</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ===== PROFILE ===== -->
+      <section id="profileView" class="view hidden">
+        <h2>⚙️ Profile &amp; Goals</h2>
+        <p class="subtitle">We use these to calculate your calories, macros, and training plan.</p>
+        <form id="profileForm" class="card">
+          <div class="grid-2">
+            <label>Age <input type="number" id="age" min="13" max="100" required /></label>
+            <label>Biological sex
+              <select id="sex" required><option value="male">Male</option><option value="female">Female</option></select>
+            </label>
+            <label>Height (cm) <input type="number" id="height" min="120" max="230" required /></label>
+            <label>Current weight (kg) <input type="number" id="weight" min="30" max="300" step="0.1" required /></label>
+            <label>Goal weight (kg) <input type="number" id="goalWeight" min="30" max="300" step="0.1" required /></label>
+            <label>Primary goal
+              <select id="goal" required>
+                <option value="lose">Lose fat</option>
+                <option value="maintain">Maintain / recomp</option>
+                <option value="gain">Build muscle</option>
+              </select>
+            </label>
+            <label>Activity level
+              <select id="activity" required>
+                <option value="1.2">Sedentary (little/no exercise)</option>
+                <option value="1.375">Lightly active (1–3 days/week)</option>
+                <option value="1.55" selected>Moderately active (3–5 days/week)</option>
+                <option value="1.725">Very active (6–7 days/week)</option>
+                <option value="1.9">Athlete (intense daily training)</option>
+              </select>
+            </label>
+            <label>Training days per week
+              <select id="trainingDays" required>
+                <option value="3">3 days</option><option value="4">4 days</option>
+                <option value="5">5 days</option><option value="6">6 days</option>
+              </select>
+            </label>
+            <label>Equipment available
+              <select id="equipment" required>
+                <option value="gym">Full gym</option>
+                <option value="home">Home (dumbbells/bands)</option>
+                <option value="bodyweight">Bodyweight only</option>
+              </select>
+            </label>
+            <label>Dietary preference
+              <select id="diet" required>
+                <option value="none">No restriction</option>
+                <option value="vegetarian">Vegetarian</option>
+                <option value="vegan">Vegan</option>
+              </select>
+            </label>
+          </div>
+          <p id="profileError" class="error hidden"></p>
+          <button type="submit" class="btn-primary">Save &amp; generate my plan</button>
+        </form>
+      </section>
+
+    </main>
+  </div>
 
   <script src="app.js"></script>
 </body>

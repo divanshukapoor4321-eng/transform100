@@ -1,8 +1,9 @@
 # 💪 Transform100
 
-A personal fitness website that builds a **diet plan**, a **workout plan**, and
-**tracks your progress** toward a goal weight — all from your profile. No internet,
-no accounts on a server, no installation. Everything runs in your browser.
+A personal fitness website with a **diet plan**, **cardio** & **weight-training**
+plans, a **water tracker**, and **progress tracking** toward a goal weight — all
+generated from your profile. No accounts on a server, no installation. Everything
+runs in your browser.
 
 ## How to use it
 
@@ -10,8 +11,12 @@ no accounts on a server, no installation. Everything runs in your browser.
 
 1. **Sign up** with any username + password (stored only in *your* browser).
 2. Fill in your **profile** (age, height, weight, goal, training days, etc.).
-3. Get your **calorie + macro targets**, a **meal plan**, and a **workout split**.
-4. Use the **Progress** tab to log your weight and watch the trend line.
+3. Use the **left side menu** to explore your sections:
+   - 🍎 **Diet** — meal plan + a daily calorie log
+   - 🏃 **Cardio** — goal-tailored cardio sessions
+   - 🏋️ **Weight Training** — your split, with a ✅ mark-done button & 🔥 streak
+   - 💧 **Water** — track glasses toward your daily goal
+   - 📈 **Progress** — log your weight and watch the trend line toward your goal
 
 > Your data lives in this browser's *local storage*. If you clear your browser
 > data, or open the site in a different browser/computer, your account won't be
@@ -35,10 +40,9 @@ no accounts on a server, no installation. Everything runs in your browser.
 
 ## Ideas for the next version
 
-- A **meal log** to check calories eaten vs. your target each day.
-- Mark **workouts as completed** and track a streak.
 - Charts for **body measurements** (waist, arms), not just weight.
 - A real **backend + login** so your data syncs across devices.
+- Reminders/notifications for water and workouts.
 - Export your plan to **PDF**.
 
 ---
