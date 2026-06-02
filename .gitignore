@@ -1,0 +1,8 @@
+# Local-only helper files that don't need to be published
+dist/
+.claude/
+
+# OS / editor junk
+Thumbs.db
+.DS_Store
+*.swp

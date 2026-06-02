@@ -1,0 +1,168 @@
+/* ===========================================================
+   Transform100 — styles
+   A clean, modern look. Edit the colors below to re-theme.
+   =========================================================== */
+
+:root {
+  --bg:        #0f1226;
+  --bg-soft:   #181c3a;
+  --card:      #1e2347;
+  --card-2:    #252b54;
+  --text:      #eef1ff;
+  --muted:     #9aa3c7;
+  --primary:   #5b6cff;
+  --primary-2: #8a5bff;
+  --accent:    #28d39f;
+  --danger:    #ff5d6c;
+  --border:    #2c3360;
+  --radius:    14px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: radial-gradient(1200px 600px at 70% -10%, #2a2160 0%, var(--bg) 55%);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+
+.hidden { display: none !important; }
+
+/* ---------- Layout ---------- */
+.container { max-width: 960px; margin: 0 auto; padding: 28px 20px 80px; }
+
+.view { animation: fade .25s ease; }
+@keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* ---------- Navbar ---------- */
+.navbar {
+  display: flex; align-items: center; gap: 20px;
+  padding: 14px 24px;
+  background: rgba(20, 24, 54, 0.85);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 10;
+  flex-wrap: wrap;
+}
+.brand { font-weight: 800; font-size: 1.25rem; }
+.brand span { color: var(--primary); }
+.nav-links { display: flex; gap: 6px; flex: 1; flex-wrap: wrap; }
+.nav-btn {
+  background: transparent; border: none; color: var(--muted);
+  padding: 8px 14px; border-radius: 10px; cursor: pointer; font-size: .95rem;
+  transition: all .15s;
+}
+.nav-btn:hover { color: var(--text); background: var(--card); }
+.nav-btn.active { color: #fff; background: linear-gradient(135deg, var(--primary), var(--primary-2)); }
+.logout-btn {
+  background: transparent; border: 1px solid var(--border); color: var(--muted);
+  padding: 8px 14px; border-radius: 10px; cursor: pointer;
+}
+.logout-btn:hover { color: var(--danger); border-color: var(--danger); }
+
+/* ---------- Hero / headings ---------- */
+.hero { text-align: center; margin: 30px 0 28px; }
+.hero h1 { font-size: 2.6rem; letter-spacing: -1px; }
+.hero h1 span { color: var(--primary); }
+.tagline { color: var(--muted); margin-top: 8px; font-size: 1.05rem; }
+h2 { font-size: 1.6rem; margin-bottom: 4px; }
+h3 { font-size: 1.15rem; margin-bottom: 12px; }
+.subtitle { color: var(--muted); margin-bottom: 18px; }
+
+/* ---------- Cards ---------- */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px;
+  margin-bottom: 20px;
+}
+.auth-card { max-width: 420px; margin: 0 auto; }
+
+/* ---------- Forms ---------- */
+label { display: block; margin-bottom: 14px; font-size: .9rem; color: var(--muted); }
+input, select {
+  width: 100%; margin-top: 6px;
+  background: var(--bg-soft); border: 1px solid var(--border);
+  color: var(--text); padding: 11px 12px; border-radius: 10px; font-size: 1rem;
+}
+input:focus, select:focus { outline: 2px solid var(--primary); border-color: transparent; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+.inline-form { display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap; }
+.inline-form label { margin-bottom: 0; flex: 1; min-width: 140px; }
+.inline-form button { flex: 0 0 auto; }
+
+.btn-primary {
+  width: 100%; margin-top: 8px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-2));
+  color: #fff; border: none; padding: 13px; border-radius: 10px;
+  font-size: 1rem; font-weight: 600; cursor: pointer; transition: transform .1s, filter .15s;
+}
+.btn-primary:hover { filter: brightness(1.08); }
+.btn-primary:active { transform: scale(.99); }
+.inline-form .btn-primary { width: auto; padding: 12px 22px; margin-top: 0; }
+
+.tabs, .tab { user-select: none; }
+.tabs { display: flex; gap: 8px; margin-bottom: 18px; }
+.tab {
+  flex: 1; background: var(--bg-soft); border: 1px solid var(--border);
+  color: var(--muted); padding: 10px; border-radius: 10px; cursor: pointer;
+}
+.tab.active { background: var(--card-2); color: #fff; border-color: var(--primary); }
+
+.hint { color: var(--muted); font-size: .85rem; margin-top: 12px; text-align: center; }
+.error { color: var(--danger); font-size: .9rem; margin: 4px 0 10px; }
+
+/* ---------- Stat grid ---------- */
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 22px; }
+.stat {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 18px; text-align: center;
+}
+.stat .num { font-size: 1.8rem; font-weight: 800; color: var(--accent); }
+.stat .num.primary { color: var(--primary); }
+.stat .lbl { color: var(--muted); font-size: .85rem; margin-top: 4px; }
+
+/* ---------- Macro bars ---------- */
+.macro-row { display: flex; align-items: center; gap: 12px; margin: 10px 0; }
+.macro-row .name { width: 90px; color: var(--muted); }
+.macro-row .bar { flex: 1; height: 12px; background: var(--bg-soft); border-radius: 99px; overflow: hidden; }
+.macro-row .fill { height: 100%; border-radius: 99px; }
+.macro-row .val { width: 110px; text-align: right; font-variant-numeric: tabular-nums; }
+.fill.protein { background: #ff6f91; }
+.fill.carbs   { background: #ffc145; }
+.fill.fat     { background: #5b9bff; }
+
+/* ---------- Meal & workout blocks ---------- */
+.meal, .workout-day {
+  background: var(--card-2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px; margin-bottom: 14px;
+}
+.meal h4, .workout-day h4 { font-size: 1.05rem; margin-bottom: 4px; }
+.meal .kcal { color: var(--accent); font-size: .9rem; margin-bottom: 10px; }
+.food-list, .ex-list { list-style: none; }
+.food-list li, .ex-list li {
+  padding: 8px 0; border-bottom: 1px dashed var(--border);
+  display: flex; justify-content: space-between; gap: 12px;
+}
+.food-list li:last-child, .ex-list li:last-child { border-bottom: none; }
+.ex-list .scheme { color: var(--muted); white-space: nowrap; }
+
+/* ---------- Table ---------- */
+.table { width: 100%; border-collapse: collapse; }
+.table th, .table td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); }
+.table th { color: var(--muted); font-weight: 600; font-size: .85rem; }
+.table .up { color: var(--danger); }
+.table .down { color: var(--accent); }
+.del-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1rem; }
+.del-btn:hover { color: var(--danger); }
+
+canvas { width: 100%; height: auto; display: block; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 560px) {
+  .grid-2 { grid-template-columns: 1fr; }
+  .hero h1 { font-size: 2rem; }
+}
