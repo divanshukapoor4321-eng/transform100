@@ -55,6 +55,7 @@ function normalizeUser(u) {
   u.meals = u.meals || {};             // { date: [ {name, kcal} ] }
   u.water = u.water || {};             // { date: glasses }
   u.workoutsDone = u.workoutsDone || {}; // { date: true }
+  u.foodPicker = u.foodPicker || [];     // ids of foods chosen in the "eat today" picker
   return u;
 }
 
@@ -566,6 +567,8 @@ function renderDiet(u, targets) {
         <ol class="recipe-steps">${mm.recipe.map(s => `<li>${s}</li>`).join('')}</ol>
       </details>
     </div>`).join('');
+
+  renderFoodPicker(u, targets);
 }
 
 document.getElementById('shuffleDiet').addEventListener('click', () => {
@@ -573,6 +576,126 @@ document.getElementById('shuffleDiet').addEventListener('click', () => {
   const u = DB.current();
   renderDiet(u, buildTargets(u.profile));
 });
+
+/* -----------------------------------------------------------
+   9c. "WHAT WILL YOU EAT TODAY?" — portion calculator
+   You tick the foods you have; it scales your protein foods to
+   hit your protein target, then fills remaining calories with
+   your chosen carbs. Veg & fats use a sensible fixed serving.
+   `per` = kcal/protein per ONE unit (per gram for 'g' foods).
+----------------------------------------------------------- */
+const FOOD_ITEMS = [
+  // Proteins
+  { id: 'chicken', name: 'Chicken', emoji: '🍗', cat: 'protein', type: 'nonveg', unit: 'g', per: { kcal: 1.65, protein: 0.31 }, base: 150, step: 10, min: 50, max: 300 },
+  { id: 'eggs', name: 'Eggs', emoji: '🥚', cat: 'protein', type: 'nonveg', unit: 'egg', per: { kcal: 78, protein: 6.3 }, base: 2, step: 1, min: 1, max: 6 },
+  { id: 'paneer', name: 'Paneer', emoji: '🧀', cat: 'protein', type: 'veg', unit: 'g', per: { kcal: 2.65, protein: 0.18 }, base: 60, step: 10, min: 30, max: 200 },
+  { id: 'curd', name: 'Curd', emoji: '🥛', cat: 'protein', type: 'veg', unit: 'g', per: { kcal: 0.6, protein: 0.035 }, base: 150, step: 25, min: 50, max: 400 },
+  { id: 'tofu', name: 'Tofu', emoji: '⬜', cat: 'protein', type: 'vegan', unit: 'g', per: { kcal: 1.45, protein: 0.16 }, base: 100, step: 10, min: 50, max: 250 },
+  { id: 'soya', name: 'Soya chunks', emoji: '🟤', cat: 'protein', type: 'vegan', unit: 'g', per: { kcal: 3.45, protein: 0.52 }, base: 30, step: 5, min: 15, max: 80, note: 'dry' },
+  { id: 'dal', name: 'Dal', emoji: '🍲', cat: 'protein', type: 'vegan', unit: 'katori', per: { kcal: 140, protein: 8 }, base: 1, step: 0.5, min: 0.5, max: 3 },
+  // Carbs
+  { id: 'roti', name: 'Roti', emoji: '🫓', cat: 'carb', type: 'vegan', unit: 'roti', per: { kcal: 75, protein: 2.5 }, base: 2, step: 1, min: 1, max: 8 },
+  { id: 'rice', name: 'Rice', emoji: '🍚', cat: 'carb', type: 'vegan', unit: 'katori', per: { kcal: 200, protein: 4 }, base: 1, step: 0.5, min: 0.5, max: 4, note: 'cooked' },
+  { id: 'oats', name: 'Oats', emoji: '🌾', cat: 'carb', type: 'vegan', unit: 'g', per: { kcal: 3.89, protein: 0.13 }, base: 40, step: 5, min: 20, max: 100, note: 'dry' },
+  { id: 'poha', name: 'Poha', emoji: '🥣', cat: 'carb', type: 'vegan', unit: 'katori', per: { kcal: 130, protein: 2.5 }, base: 1.5, step: 0.5, min: 1, max: 3 },
+  // Veggies (fixed serving)
+  { id: 'veggies', name: 'Veggies', emoji: '🥦', cat: 'veg', type: 'vegan', unit: 'g', per: { kcal: 0.4, protein: 0.02 }, base: 200, step: 25, min: 100, max: 400 },
+  // Fats (fixed serving)
+  { id: 'peanut', name: 'Peanut butter', emoji: '🥜', cat: 'fat', type: 'vegan', unit: 'g', per: { kcal: 5.9, protein: 0.25 }, base: 15, step: 5, min: 5, max: 40 },
+  { id: 'almonds', name: 'Almonds', emoji: '🌰', cat: 'fat', type: 'vegan', unit: 'g', per: { kcal: 5.8, protein: 0.21 }, base: 15, step: 5, min: 5, max: 40 },
+];
+const CAT_LABEL = { protein: '💪 Proteins', carb: '🍚 Carbs', veg: '🥦 Veggies', fat: '🥜 Fats' };
+
+function qtyLabel(item, qty) {
+  if (item.unit === 'g') return `${qty} g`;
+  return `${formatCount(qty)} ${pluralUnit(item.unit, qty)}`;
+}
+const roundStep = (v, step) => Math.max(0, Math.round(v / step) * step);
+const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
+
+// Core: turn a list of chosen foods into exact quantities.
+function computePortions(items, targets) {
+  const rows = [];
+  let kcal = 0, protein = 0;
+  const add = (item, qty) => {
+    const k = Math.round(qty * item.per.kcal), pr = qty * item.per.protein;
+    rows.push({ item, qty, kcal: k, protein: pr }); kcal += k; protein += pr;
+  };
+  // Veggies & fats: sensible fixed serving (for fibre/micros & healthy fats)
+  items.filter(i => i.cat === 'veg' || i.cat === 'fat').forEach(i => add(i, i.base));
+
+  // Proteins: scale together so they hit the remaining protein target
+  const proteins = items.filter(i => i.cat === 'protein');
+  if (proteins.length) {
+    const baseProt = proteins.reduce((s, i) => s + i.base * i.per.protein, 0);
+    const need = Math.max(targets.macros.protein - protein, 0);
+    const scale = baseProt > 0 ? need / baseProt : 0;
+    proteins.forEach(i => add(i, clamp(roundStep(i.base * scale, i.step), i.min, i.max)));
+  }
+  // Carbs: scale to fill the calories left after protein/veg/fat
+  const carbs = items.filter(i => i.cat === 'carb');
+  if (carbs.length) {
+    const remaining = targets.calories - kcal;
+    const baseKcal = carbs.reduce((s, i) => s + i.base * i.per.kcal, 0);
+    const scale = baseKcal > 0 ? Math.max(remaining, 0) / baseKcal : 0;
+    carbs.forEach(i => add(i, clamp(roundStep(i.base * scale, i.step), i.min, i.max)));
+  }
+  return { rows, kcal: Math.round(kcal), protein: Math.round(protein) };
+}
+
+function renderFoodPicker(u, targets) {
+  const diet = u.profile.diet;
+  const allowed = FOOD_ITEMS.filter(i => dishAllowed(i, diet));
+  const chosen = new Set(u.foodPicker);
+
+  // Build chips grouped by category
+  const chipsHtml = ['protein', 'carb', 'veg', 'fat'].map(cat => {
+    const list = allowed.filter(i => i.cat === cat);
+    if (!list.length) return '';
+    return `<div class="chip-group"><div class="chip-cat">${CAT_LABEL[cat]}</div>
+      <div class="chips">${list.map(i =>
+        `<button class="chip ${chosen.has(i.id) ? 'on' : ''}" data-id="${i.id}">${i.emoji} ${i.name}</button>`).join('')}</div></div>`;
+  }).join('');
+  document.getElementById('foodChips').innerHTML = chipsHtml;
+  document.querySelectorAll('#foodChips .chip').forEach(c => c.addEventListener('click', () => {
+    const user = DB.current(); const id = c.dataset.id;
+    user.foodPicker = chosen.has(id) ? user.foodPicker.filter(x => x !== id) : [...user.foodPicker, id];
+    DB.saveCurrent(user);
+    renderFoodPicker(user, targets);
+  }));
+
+  // Results
+  const sel = allowed.filter(i => chosen.has(i.id));
+  const res = document.getElementById('pickerResult');
+  if (!sel.length) {
+    res.innerHTML = `<p class="hint" style="text-align:left">👆 Tick the foods you have today and I'll give you the exact amount of each.</p>`;
+    return;
+  }
+  const { rows, kcal, protein } = computePortions(sel, targets);
+  const pTarget = targets.macros.protein, cTarget = targets.calories;
+  const proteinOk = protein >= pTarget * 0.95;
+  const calorieOk = Math.abs(kcal - cTarget) <= cTarget * 0.1;
+
+  const rowsHtml = rows.map(r =>
+    `<li><span>${r.item.emoji} ${r.item.name}${r.item.note ? ` <span class="muted-small">(${r.item.note})</span>` : ''}</span>
+       <span><strong>${qtyLabel(r.item, r.qty)}</strong> <span class="muted-small">· ${r.kcal} kcal · ${Math.round(r.protein)}g P</span></span></li>`).join('');
+
+  const tips = [];
+  if (!sel.some(i => i.cat === 'protein')) tips.push('Add at least one protein (chicken, paneer, tofu, dal, eggs…) — otherwise you can’t hit your protein target.');
+  else if (!proteinOk) tips.push(`You're ${Math.round(pTarget - protein)}g short on protein even at max portions — add another protein food or a whey/soy scoop.`);
+  if (kcal < cTarget - 150) tips.push(sel.some(i => i.cat === 'carb')
+    ? `You're ~${cTarget - kcal} kcal short — increase a carb portion or add another carb/snack.`
+    : 'Add a carb (roti, rice, oats…) to reach your calories.');
+  if (kcal > cTarget + 150) tips.push('This combo runs high on calories — drop a carb portion or pick leaner proteins.');
+
+  res.innerHTML = `
+    <ul class="portion-list">${rowsHtml}</ul>
+    <div class="portion-totals">
+      <span class="${proteinOk ? 'ok' : 'warn'}">${proteinOk ? '✅' : '⚠️'} Protein ${protein}g / ${pTarget}g</span>
+      <span class="${calorieOk ? 'ok' : 'warn'}">${calorieOk ? '✅' : '⚠️'} Calories ${kcal} / ${cTarget}</span>
+    </div>
+    ${tips.map(t => `<p class="diet-tip">💡 ${t}</p>`).join('')}`;
+}
 
 /* -----------------------------------------------------------
    10. MEAL / CALORIE LOG

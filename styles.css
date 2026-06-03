@@ -213,6 +213,24 @@ input:focus, select:focus { outline: 2px solid var(--primary); border-color: tra
 .recipe-steps { margin: 10px 0 2px; padding-left: 20px; color: var(--text); }
 .recipe-steps li { padding: 4px 0; }
 .diet-tip { background: rgba(255,106,61,.12); border: 1px solid rgba(255,106,61,.4); color: #ffd9cc; padding: 12px 14px; border-radius: 12px; margin-bottom: 16px; font-size: .92rem; }
+
+/* Food picker (what will you eat today) */
+.chip-group { margin-bottom: 14px; }
+.chip-cat { color: var(--muted); font-size: .85rem; margin-bottom: 8px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  background: var(--bg-soft); border: 1px solid var(--border); color: var(--text);
+  padding: 8px 14px; border-radius: 99px; cursor: pointer; font-size: .92rem; transition: all .12s;
+}
+.chip:hover { border-color: var(--primary); }
+.chip.on { background: linear-gradient(135deg, var(--primary), var(--primary-2)); border-color: transparent; color: #fff; font-weight: 600; }
+.portion-list { list-style: none; margin: 6px 0 14px; }
+.portion-list li { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px dashed var(--border); }
+.portion-list li:last-child { border-bottom: none; }
+.portion-totals { display: flex; gap: 16px; flex-wrap: wrap; font-weight: 700; margin-bottom: 8px; }
+.portion-totals .ok { color: var(--accent); }
+.portion-totals .warn { color: var(--hot); }
+.section-sep { margin: 26px 0 14px; color: var(--muted); font-weight: 600; }
 .food-list, .ex-list { list-style: none; }
 .food-list li, .ex-list li {
   padding: 8px 0; border-bottom: 1px dashed var(--border);
