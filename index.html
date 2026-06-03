@@ -100,6 +100,19 @@
           <div id="pickerResult"><!-- quantities, filled by JS --></div>
         </div>
 
+        <!-- AI Chef (needs Gemini key from Profile) -->
+        <div class="card" id="aiChef">
+          <h3>✨ AI Chef <span class="muted-small">(fresh ideas, not pre-written)</span></h3>
+          <div class="ai-actions">
+            <button type="button" class="ai-btn" data-ai="plan">🍱 Make me a meal plan</button>
+            <button type="button" class="ai-btn" data-ai="recipe">📖 Recipe for…</button>
+            <button type="button" class="ai-btn" data-ai="substitute">🔄 Substitute for…</button>
+          </div>
+          <input type="text" id="aiInput" placeholder="Type a dish/food, or ask anything: e.g. high-protein veg dinner under 500 kcal" />
+          <button type="button" id="aiAsk" class="btn-primary" style="margin-top:10px">Ask the AI Chef</button>
+          <div id="aiResult" class="ai-result"><!-- response, filled by JS --></div>
+        </div>
+
         <h3 class="section-sep">Or follow a ready-made plan 👇</h3>
         <div class="diet-toolbar">
           <div id="dietSummary" class="diet-summary"><!-- day total, filled by JS --></div>
@@ -230,6 +243,25 @@
           <p id="profileError" class="error hidden"></p>
           <button type="submit" class="btn-primary">Save &amp; generate my plan</button>
         </form>
+
+        <!-- Optional AI features (bring your own Gemini key) -->
+        <div class="card" id="aiSettings">
+          <h3>🤖 AI features <span class="muted-small">(optional)</span></h3>
+          <p class="subtitle">Add a free Google Gemini API key to unlock AI meal plans, recipes &amp; substitutes.
+            🔒 Your key is saved <strong>only in this browser</strong> — never uploaded or shared.</p>
+          <label>Gemini API key
+            <input type="password" id="geminiKey" placeholder="Paste your key (starts with AIza…)" autocomplete="off" />
+          </label>
+          <label>Model <span class="muted-small">(use “Test” to see what's available)</span>
+            <input type="text" id="geminiModel" placeholder="gemini-2.5-flash" />
+          </label>
+          <div class="ai-actions">
+            <button type="button" id="saveKey" class="btn-primary" style="width:auto">Save</button>
+            <button type="button" id="testKey" class="btn-primary btn-hot" style="width:auto">Test connection</button>
+            <button type="button" id="clearKey" class="btn-ghost">Remove key</button>
+          </div>
+          <p id="aiStatus" class="hint" style="text-align:left"></p>
+        </div>
       </section>
 
     </main>

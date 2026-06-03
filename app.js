@@ -373,7 +373,7 @@ function showView(name) {
 }
 document.querySelectorAll('.side-btn').forEach(btn =>
   btn.addEventListener('click', () => {
-    if (btn.dataset.view === 'profile') fillProfileForm();
+    if (btn.dataset.view === 'profile') { fillProfileForm(); populateAISettings(); }
     showView(btn.dataset.view);
   })
 );
@@ -696,6 +696,168 @@ function renderFoodPicker(u, targets) {
     </div>
     ${tips.map(t => `<p class="diet-tip">💡 ${t}</p>`).join('')}`;
 }
+
+/* -----------------------------------------------------------
+   9d. AI FEATURES (Google Gemini — bring your own key)
+   The key is stored ONLY in this browser's localStorage and is
+   never committed to the code or uploaded anywhere by us.
+----------------------------------------------------------- */
+const AI = {
+  key: () => localStorage.getItem('t100_gemini_key') || '',
+  model: () => localStorage.getItem('t100_gemini_model') || 'gemini-2.5-flash',
+  setKey: k => localStorage.setItem('t100_gemini_key', k),
+  setModel: m => localStorage.setItem('t100_gemini_model', m || 'gemini-2.5-flash'),
+  clear: () => { localStorage.removeItem('t100_gemini_key'); localStorage.removeItem('t100_gemini_model'); },
+};
+const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
+
+// Ask the model for text. Throws an Error with a friendly message on failure.
+async function askGemini(prompt) {
+  const key = AI.key();
+  if (!key) throw new Error('NO_KEY');
+  const url = `${GEMINI_BASE}/models/${AI.model()}:generateContent?key=${encodeURIComponent(key)}`;
+  let res;
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.8 } }),
+    });
+  } catch (e) { throw new Error('Network error — check your internet connection.'); }
+  if (!res.ok) {
+    let msg = `Request failed (HTTP ${res.status}).`;
+    try { const j = await res.json(); if (j.error && j.error.message) msg = j.error.message; } catch (e) {}
+    if (res.status === 400 || res.status === 403) msg += ' Double-check your API key.';
+    if (res.status === 404) msg += ' That model name may be wrong — hit “Test connection” to see valid models.';
+    if (res.status === 429) msg = 'Rate limit reached — wait a minute and try again.';
+    throw new Error(msg);
+  }
+  const data = await res.json();
+  const text = (data.candidates && data.candidates[0] && data.candidates[0].content
+    && data.candidates[0].content.parts || []).map(p => p.text).join('');
+  if (!text) throw new Error('The model returned an empty response. Try again.');
+  return text;
+}
+
+// List models the key can use (for the Test button).
+async function listGeminiModels() {
+  const key = AI.key();
+  if (!key) throw new Error('NO_KEY');
+  const res = await fetch(`${GEMINI_BASE}/models?key=${encodeURIComponent(key)}`);
+  if (!res.ok) {
+    let msg = `HTTP ${res.status}`;
+    try { const j = await res.json(); if (j.error && j.error.message) msg = j.error.message; } catch (e) {}
+    throw new Error(msg);
+  }
+  const data = await res.json();
+  return (data.models || [])
+    .filter(m => (m.supportedGenerationMethods || []).includes('generateContent'))
+    .map(m => m.name.replace('models/', ''));
+}
+
+// Tiny, safe Markdown -> HTML (bold, italics, headings, bullet/number lists).
+function escapeHtml(s) { return s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }
+function mdLite(text) {
+  const inline = s => s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/(^|[^*])\*([^*]+?)\*/g, '$1<em>$2</em>');
+  let html = '', inList = false;
+  escapeHtml(text).split('\n').forEach(raw => {
+    const line = raw.trim();
+    const close = () => { if (inList) { html += '</ul>'; inList = false; } };
+    if (/^#{1,6}\s/.test(line)) { close(); html += `<h4>${inline(line.replace(/^#{1,6}\s/, ''))}</h4>`; return; }
+    const li = line.match(/^[-*]\s+(.*)/) || line.match(/^\d+[.)]\s+(.*)/);
+    if (li) { if (!inList) { html += '<ul>'; inList = true; } html += `<li>${inline(li[1])}</li>`; return; }
+    close();
+    if (line) html += `<p>${inline(line)}</p>`;
+  });
+  if (inList) html += '</ul>';
+  return html;
+}
+
+// Build a short context line about the user for better prompts.
+function profileContext() {
+  const u = DB.current();
+  if (!u || !u.profile) return '';
+  const p = u.profile, t = buildTargets(p);
+  const dmap = { none: 'eats both veg and non-veg', vegetarian: 'vegetarian (no meat or egg; dairy is fine)', vegan: 'vegan (no animal products)' };
+  return `The user is a ${p.age}-year-old ${p.sex}, ${p.weight}kg, goal: ${p.goal} weight, ${dmap[p.diet]}. ` +
+    `Daily targets: about ${t.calories} kcal and ${t.macros.protein}g protein. Prefers Indian food.`;
+}
+
+const aiResultEl = () => document.getElementById('aiResult');
+async function runAI(prompt, label) {
+  const el = aiResultEl();
+  el.innerHTML = `<p class="ai-loading">✨ ${label || 'Thinking'}…</p>`;
+  try {
+    const text = await askGemini(prompt);
+    el.innerHTML = mdLite(text);
+  } catch (e) {
+    if (e.message === 'NO_KEY') {
+      el.innerHTML = `<p class="ai-error">🔑 Add your Gemini API key first — go to <strong>Profile → AI features</strong>.</p>`;
+    } else {
+      el.innerHTML = `<p class="ai-error">⚠️ ${escapeHtml(e.message)}</p>`;
+    }
+  }
+}
+
+// AI Chef buttons
+document.querySelectorAll('#aiChef .ai-btn').forEach(btn => btn.addEventListener('click', () => {
+  const kind = btn.dataset.ai;
+  const input = document.getElementById('aiInput').value.trim();
+  const ctx = profileContext();
+  if (kind === 'plan') {
+    runAI(`${ctx}\nCreate a simple 1-day Indian meal plan (breakfast, lunch, snack, dinner) with exact home quantities (grams, katori, rotis) that roughly meets the targets. Use short headings and bullet points. Keep it practical to cook at home.`, 'Cooking up a plan');
+  } else if (kind === 'recipe') {
+    if (!input) return focusAiInput('Type a dish name above, then tap “Recipe for…”.');
+    runAI(`Give a simple Indian-style home recipe for "${input}". List ingredients with quantities, then numbered steps. Keep it concise and beginner-friendly.`, 'Writing the recipe');
+  } else if (kind === 'substitute') {
+    if (!input) return focusAiInput('Type a food above, then tap “Substitute for…”.');
+    runAI(`${ctx}\nSuggest 3 healthy Indian substitutes for "${input}" with similar nutrition. For each, give the swap amount and a one-line reason. Use bullet points.`, 'Finding substitutes');
+  }
+}));
+document.getElementById('aiAsk').addEventListener('click', () => {
+  const input = document.getElementById('aiInput').value.trim();
+  if (!input) return focusAiInput('Type your question above first.');
+  runAI(`${profileContext()}\nUser question about diet/fitness: ${input}\nAnswer helpfully and concisely with Indian food in mind. Use bullet points where useful.`, 'Thinking');
+});
+function focusAiInput(msg) {
+  aiResultEl().innerHTML = `<p class="ai-error">${msg}</p>`;
+  document.getElementById('aiInput').focus();
+}
+
+// AI settings (Profile)
+function populateAISettings() {
+  document.getElementById('geminiKey').value = AI.key();
+  document.getElementById('geminiModel').value = AI.model();
+  const has = !!AI.key();
+  document.getElementById('aiStatus').innerHTML = has
+    ? '✅ A key is saved in this browser. AI Chef is ready in the Diet tab.'
+    : 'No key yet. Paste one above and press Save. (See the in-app guide for how to get one.)';
+}
+document.getElementById('saveKey').addEventListener('click', () => {
+  const k = document.getElementById('geminiKey').value.trim();
+  AI.setKey(k); AI.setModel(document.getElementById('geminiModel').value.trim());
+  document.getElementById('aiStatus').textContent = k ? '✅ Saved in this browser. Try the AI Chef in the Diet tab!' : '⚠️ Key field was empty.';
+});
+document.getElementById('clearKey').addEventListener('click', () => {
+  AI.clear(); document.getElementById('geminiKey').value = ''; document.getElementById('geminiModel').value = '';
+  document.getElementById('aiStatus').textContent = '🗑️ Key removed from this browser.';
+});
+document.getElementById('testKey').addEventListener('click', async () => {
+  const status = document.getElementById('aiStatus');
+  const k = document.getElementById('geminiKey').value.trim();
+  if (k) { AI.setKey(k); AI.setModel(document.getElementById('geminiModel').value.trim()); }
+  status.textContent = '⏳ Testing your key…';
+  try {
+    const models = await listGeminiModels();
+    const flash = models.filter(m => m.includes('flash'));
+    const current = AI.model();
+    const ok = models.includes(current);
+    status.innerHTML = `✅ Key works! ${ok ? `Model “${current}” is valid.` : `⚠️ “${current}” not found — pick one below.`}` +
+      `<br>Available flash models: ${(flash.length ? flash : models).slice(0, 6).join(', ')}`;
+  } catch (e) {
+    status.innerHTML = `<span class="ai-error">⚠️ ${escapeHtml(e.message === 'NO_KEY' ? 'Enter a key first.' : e.message)}</span>`;
+  }
+});
 
 /* -----------------------------------------------------------
    10. MEAL / CALORIE LOG
