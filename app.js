@@ -87,49 +87,187 @@ function buildTargets(p) {
 /* -----------------------------------------------------------
    3. DIET PLAN
 ----------------------------------------------------------- */
-const FOODS = {
-  protein: [
-    { name: 'Chicken breast', diet: 'none' }, { name: 'Lean beef', diet: 'none' },
-    { name: 'Eggs / egg whites', diet: 'vegetarian' }, { name: 'Salmon or white fish', diet: 'none' },
-    { name: 'Greek yogurt', diet: 'vegetarian' }, { name: 'Cottage cheese', diet: 'vegetarian' },
-    { name: 'Tofu / tempeh', diet: 'vegan' }, { name: 'Lentils & beans', diet: 'vegan' },
-    { name: 'Edamame', diet: 'vegan' }, { name: 'Pea / soy protein shake', diet: 'vegan' },
+/* Each meal slot: which key, share of daily calories, and a default time. */
+const MEAL_SPLIT = [
+  { name: 'Breakfast', key: 'breakfast', pct: 0.25, time: '8:00 AM' },
+  { name: 'Lunch',     key: 'lunch',     pct: 0.30, time: '1:00 PM' },
+  { name: 'Snack',     key: 'snack',     pct: 0.15, time: '5:00 PM' },
+  { name: 'Dinner',    key: 'dinner',    pct: 0.30, time: '8:00 PM' },
+];
+
+/* Indian dish database. `type`: vegan | veg (has dairy) | nonveg (egg/meat).
+   One item per dish may be the "staple" (roti/rice/etc.) — its count is scaled
+   to match your calorie target. `each` = kcal/protein per unit of the staple. */
+const INDIAN_MEALS = {
+  breakfast: [
+    { name: 'Vegetable Poha', type: 'vegan',
+      items: [
+        { staple: true, unit: 'katori', base: 1.5, step: 0.5, min: 1, max: 3, each: { kcal: 120, protein: 2.5 } },
+        { label: 'Peanuts + onion, peas & curry leaves', kcal: 70, protein: 3 },
+      ],
+      recipe: ['Rinse 1 cup flattened rice (poha) and drain.', 'Temper mustard seeds, curry leaves, chopped onion, green chilli & peanuts in 1 tsp oil.', 'Add peas, turmeric & salt, then the poha; toss 2–3 min.', 'Finish with lemon juice and coriander.'] },
+    { name: 'Besan Chilla', type: 'vegan',
+      items: [
+        { staple: true, unit: 'chilla', base: 2, step: 1, min: 1, max: 4, each: { kcal: 140, protein: 7 } },
+        { label: 'Mint–coriander chutney', kcal: 20, protein: 1 },
+      ],
+      recipe: ['Whisk 1 cup gram flour (besan) with water to a pourable batter.', 'Mix in chopped onion, tomato, green chilli, turmeric & salt.', 'Pour a ladle on a hot non-stick tava, spread thin, cook both sides with a few drops of oil.', 'Serve hot with chutney.'] },
+    { name: 'Oats Vegetable Upma', type: 'vegan',
+      items: [
+        { staple: true, unit: 'katori', base: 1.5, step: 0.5, min: 1, max: 3, each: { kcal: 130, protein: 4 } },
+        { label: 'Mixed veggies (carrot, beans, peas)', kcal: 40, protein: 2 },
+      ],
+      recipe: ['Dry-roast 1 cup oats for 2 min and set aside.', 'Temper mustard seeds, urad dal, curry leaves & onion in 1 tsp oil.', 'Add chopped veggies and sauté; pour 1.5 cups water and boil.', 'Stir in the oats, cook 3–4 min until thick.'] },
+    { name: 'Idli with Sambar', type: 'vegan',
+      items: [
+        { staple: true, unit: 'idli', base: 3, step: 1, min: 2, max: 6, each: { kcal: 60, protein: 2 } },
+        { label: '1 katori sambar', kcal: 120, protein: 6 },
+      ],
+      recipe: ['Steam idli batter in a greased mould for ~10 min until spongy.', 'For quick sambar: cook toor dal with veggies, tamarind & sambar powder.', 'Temper with mustard, curry leaves & hing, then mix in.', 'Serve idlis hot with sambar.'] },
+    { name: 'Aloo Paratha with Curd', type: 'veg',
+      items: [
+        { staple: true, unit: 'paratha', base: 2, step: 1, min: 1, max: 3, each: { kcal: 170, protein: 4 } },
+        { label: '1 katori curd (100g)', kcal: 60, protein: 3.5 },
+      ],
+      recipe: ['Knead whole-wheat dough; rest 10 min.', 'Stuff with mashed spiced potato, roll gently.', 'Cook on a tava with ½ tsp oil/ghee each side until golden.', 'Serve with curd.'] },
+    { name: 'Egg Bhurji with Toast', type: 'nonveg',
+      items: [
+        { staple: true, unit: 'egg', base: 2, step: 1, min: 2, max: 4, each: { kcal: 75, protein: 6 } },
+        { label: '2 multigrain toast', kcal: 140, protein: 5 },
+      ],
+      recipe: ['Sauté onion, tomato, green chilli in 1 tsp oil.', 'Add turmeric, salt & a pinch of garam masala.', 'Pour beaten eggs and scramble to your liking.', 'Serve with toast.'] },
   ],
-  carbs: [
-    { name: 'Oats', diet: 'vegan' }, { name: 'Brown rice', diet: 'vegan' },
-    { name: 'Sweet potato', diet: 'vegan' }, { name: 'Whole-grain bread', diet: 'vegan' },
-    { name: 'Quinoa', diet: 'vegan' }, { name: 'Banana / berries', diet: 'vegan' },
+  lunch: [
+    { name: 'Roti, Dal, Bhindi & Curd', type: 'veg',
+      items: [
+        { staple: true, unit: 'roti', base: 3, step: 1, min: 2, max: 6, each: { kcal: 75, protein: 2.5 } },
+        { label: '1 katori toor dal (150g)', kcal: 140, protein: 8 },
+        { label: '1 katori bhindi sabzi', kcal: 110, protein: 3 },
+        { label: '1 small bowl curd + salad', kcal: 90, protein: 4.5 },
+      ],
+      recipe: ['Pressure-cook toor dal, temper with cumin, garlic & tomato.', 'Sauté chopped okra (bhindi) with onion & spices until tender.', 'Roast fresh rotis on a tava.', 'Plate with curd and a fresh salad.'] },
+    { name: 'Rajma Chawal with Salad', type: 'vegan',
+      items: [
+        { staple: true, unit: 'katori', base: 1.5, step: 0.5, min: 1, max: 3, each: { kcal: 180, protein: 4 } },
+        { label: '1 katori rajma curry (150g)', kcal: 180, protein: 9 },
+        { label: 'Onion–cucumber salad', kcal: 30, protein: 1 },
+      ],
+      recipe: ['Soak rajma overnight; pressure-cook until soft.', 'Make a base of onion, tomato, ginger-garlic & spices.', 'Add rajma + a little cooking water; simmer 10 min.', 'Serve over steamed rice with salad.'] },
+    { name: 'Roti, Paneer Bhurji & Dal', type: 'veg',
+      items: [
+        { staple: true, unit: 'roti', base: 3, step: 1, min: 2, max: 6, each: { kcal: 75, protein: 2.5 } },
+        { label: '1 katori paneer bhurji (60g paneer)', kcal: 170, protein: 11 },
+        { label: '1 katori moong dal', kcal: 130, protein: 8 },
+      ],
+      recipe: ['Crumble paneer; sauté with onion, tomato, capsicum & spices.', 'Cook moong dal and temper with cumin & garlic.', 'Make fresh rotis.', 'Serve together hot.'] },
+    { name: 'Chole with Jeera Rice', type: 'vegan',
+      items: [
+        { staple: true, unit: 'katori', base: 1.5, step: 0.5, min: 1, max: 3, each: { kcal: 180, protein: 4 } },
+        { label: '1 katori chole (150g)', kcal: 180, protein: 9 },
+        { label: 'Onion–lemon salad', kcal: 30, protein: 1 },
+      ],
+      recipe: ['Pressure-cook soaked chickpeas until soft.', 'Cook onion-tomato masala with chole spices; add chickpeas, simmer.', 'Temper rice with cumin in 1 tsp oil.', 'Serve chole over jeera rice with salad.'] },
+    { name: 'Chicken Curry with Rice', type: 'nonveg',
+      items: [
+        { staple: true, unit: 'katori', base: 1.5, step: 0.5, min: 1, max: 3, each: { kcal: 180, protein: 4 } },
+        { label: '1 katori chicken curry (120g)', kcal: 220, protein: 26 },
+        { label: 'Salad', kcal: 30, protein: 1 },
+      ],
+      recipe: ['Marinate chicken in curd, ginger-garlic & spices for 20 min.', 'Sauté onion-tomato masala; add chicken and brown.', 'Add water, cover and simmer until cooked.', 'Serve with steamed rice and salad.'] },
   ],
-  fat: [
-    { name: 'Avocado', diet: 'vegan' }, { name: 'Almonds / walnuts', diet: 'vegan' },
-    { name: 'Olive oil', diet: 'vegan' }, { name: 'Peanut butter', diet: 'vegan' },
+  dinner: [
+    { name: 'Roti, Mixed Veg & Moong Dal', type: 'vegan',
+      items: [
+        { staple: true, unit: 'roti', base: 2, step: 1, min: 1, max: 5, each: { kcal: 75, protein: 2.5 } },
+        { label: '1 katori mixed veg sabzi', kcal: 110, protein: 3 },
+        { label: '1 katori moong dal', kcal: 130, protein: 8 },
+      ],
+      recipe: ['Cook moong dal; temper with cumin, garlic & tomato.', 'Stir-fry mixed vegetables with light spices.', 'Roast fresh rotis.', 'Serve warm with a little salad.'] },
+    { name: 'Vegetable Khichdi with Curd', type: 'veg',
+      items: [
+        { staple: true, unit: 'katori', base: 2, step: 0.5, min: 1, max: 3, each: { kcal: 170, protein: 6 } },
+        { label: '1 bowl curd + roasted papad', kcal: 95, protein: 5 },
+      ],
+      recipe: ['Wash rice + moong dal (1:1) and chopped veggies.', 'Pressure-cook with turmeric, salt & water (1:3) for 3 whistles.', 'Temper with cumin & ghee.', 'Serve hot with curd and papad.'] },
+    { name: 'Roti with Palak Paneer', type: 'veg',
+      items: [
+        { staple: true, unit: 'roti', base: 2, step: 1, min: 1, max: 5, each: { kcal: 75, protein: 2.5 } },
+        { label: '1 katori palak paneer (60g paneer)', kcal: 200, protein: 12 },
+        { label: 'Salad', kcal: 30, protein: 1 },
+      ],
+      recipe: ['Blanch and purée spinach.', 'Sauté onion, tomato, ginger-garlic; add the purée & spices.', 'Fold in paneer cubes; simmer 5 min.', 'Serve with fresh rotis.'] },
+    { name: 'Tofu Bhurji with Roti', type: 'vegan',
+      items: [
+        { staple: true, unit: 'roti', base: 2, step: 1, min: 1, max: 5, each: { kcal: 75, protein: 2.5 } },
+        { label: '1 katori tofu bhurji (100g tofu)', kcal: 150, protein: 12 },
+        { label: 'Salad', kcal: 30, protein: 1 },
+      ],
+      recipe: ['Crumble firm tofu.', 'Sauté onion, tomato, capsicum & turmeric in 1 tsp oil.', 'Add tofu, salt & garam masala; cook 5 min.', 'Serve with rotis and salad.'] },
+    { name: 'Grilled Chicken with Veg & Roti', type: 'nonveg',
+      items: [
+        { staple: true, unit: 'roti', base: 2, step: 1, min: 1, max: 5, each: { kcal: 75, protein: 2.5 } },
+        { label: 'Grilled chicken (120g)', kcal: 200, protein: 30 },
+        { label: 'Sautéed vegetables', kcal: 80, protein: 3 },
+      ],
+      recipe: ['Marinate chicken in curd, lemon, ginger-garlic & spices.', 'Grill or pan-sear until cooked through.', 'Toss seasonal veggies in 1 tsp olive oil.', 'Serve with 1–2 rotis.'] },
   ],
-  veg: [
-    { name: 'Broccoli', diet: 'vegan' }, { name: 'Spinach', diet: 'vegan' },
-    { name: 'Mixed salad', diet: 'vegan' }, { name: 'Bell peppers', diet: 'vegan' },
+  snack: [
+    { name: 'Sprouts Chaat', type: 'vegan',
+      items: [{ label: '1 katori moong sprouts chaat (150g)', kcal: 150, protein: 9 }],
+      recipe: ['Steam or boil moong sprouts for 3–4 min.', 'Toss with chopped onion, tomato, cucumber & coriander.', 'Add lemon, chaat masala & a pinch of salt.'] },
+    { name: 'Roasted Chana with Fruit', type: 'vegan',
+      items: [{ label: '30g roasted chana', kcal: 120, protein: 6 }, { label: '1 apple or orange', kcal: 70, protein: 1 }],
+      recipe: ['Keep a handful of roasted chana ready.', 'Pair with a seasonal fruit for fibre & vitamins.'] },
+    { name: 'Curd with Nuts', type: 'veg',
+      items: [{ label: '1 bowl curd (150g)', kcal: 90, protein: 5 }, { label: '8–10 almonds', kcal: 70, protein: 3 }],
+      recipe: ['Take a bowl of plain curd.', 'Top with a few almonds (and seeds if you like).'] },
+    { name: 'Banana & Peanut Butter', type: 'vegan',
+      items: [{ label: '1 banana', kcal: 100, protein: 1.3 }, { label: '1 tbsp peanut butter', kcal: 95, protein: 4 }],
+      recipe: ['Slice a banana.', 'Spread or dip with 1 tbsp natural peanut butter.'] },
+    { name: 'Masala Buttermilk & Makhana', type: 'veg',
+      items: [{ label: '1 glass masala buttermilk', kcal: 40, protein: 2 }, { label: '30g roasted makhana', kcal: 100, protein: 3 }],
+      recipe: ['Whisk curd with water, roasted cumin, salt & coriander.', 'Dry-roast makhana (fox nuts) in 1 tsp ghee until crisp.'] },
   ],
 };
-function foodAllowed(f, diet) {
-  if (diet === 'none') return true;
-  if (diet === 'vegetarian') return f.diet !== 'none';
-  if (diet === 'vegan') return f.diet === 'vegan';
-  return true;
-}
-const pick = (list, diet, n) => list.filter(f => foodAllowed(f, diet)).slice(0, n).map(f => f.name);
 
-const MEAL_SPLIT = [
-  { name: 'Breakfast', pct: 0.25 }, { name: 'Lunch', pct: 0.30 },
-  { name: 'Dinner', pct: 0.30 }, { name: 'Snack', pct: 0.15 },
-];
-function buildDietPlan(targets, diet) {
-  return MEAL_SPLIT.map(meal => ({
-    name: meal.name,
-    kcal: Math.round(targets.calories * meal.pct),
-    foods: [
-      ...pick(FOODS.protein, diet, 2), ...pick(FOODS.carbs, diet, 1),
-      ...pick(FOODS.veg, diet, 1), ...(meal.name === 'Snack' ? pick(FOODS.fat, diet, 1) : []),
-    ],
-  }));
+function dishAllowed(d, diet) {
+  if (diet === 'vegan') return d.type === 'vegan';
+  if (diet === 'vegetarian') return d.type === 'vegan' || d.type === 'veg';
+  return true; // 'none' = no restriction (includes egg/meat)
+}
+const formatCount = c => (Number.isInteger(c) ? String(c) : c.toFixed(1));
+function pluralUnit(unit, count) {
+  if (count === 1) return unit;
+  if (unit === 'katori') return 'katori';
+  if (unit === 'glass') return 'glasses';
+  return unit + 's';
+}
+
+// Build a day's Indian plan, scaling each meal's staple to its calorie target.
+function buildIndianPlan(targets, diet, offset) {
+  const daySeed = new Date().getDate();
+  return MEAL_SPLIT.map((slot, si) => {
+    const list = (INDIAN_MEALS[slot.key] || []).filter(d => dishAllowed(d, diet));
+    if (!list.length) return null;
+    const idx = (((daySeed + si * 7 + offset) % list.length) + list.length) % list.length;
+    const dish = list[idx];
+    const slotTarget = Math.round(targets.calories * slot.pct);
+
+    const items = []; let kcal = 0, protein = 0, fixedKcal = 0, fixedProt = 0, staple = null;
+    dish.items.forEach(it => {
+      if (it.staple) staple = it;
+      else { fixedKcal += it.kcal; fixedProt += it.protein || 0; items.push({ label: it.label, kcal: it.kcal }); }
+    });
+    if (staple) {
+      let count = Math.round(((slotTarget - fixedKcal) / staple.each.kcal) / staple.step) * staple.step;
+      count = Math.min(Math.max(count, staple.min), staple.max);
+      const sk = Math.round(count * staple.each.kcal);
+      items.unshift({ label: `${formatCount(count)} ${pluralUnit(staple.unit, count)}`, kcal: sk });
+      kcal = fixedKcal + sk; protein = Math.round(fixedProt + count * staple.each.protein);
+    } else { kcal = fixedKcal; protein = Math.round(fixedProt); }
+
+    return { meal: slot.name, time: slot.time, name: dish.name, type: dish.type, items, kcal, protein, recipe: dish.recipe };
+  }).filter(Boolean);
 }
 
 /* -----------------------------------------------------------
@@ -335,11 +473,7 @@ function renderAll() {
   renderQuickSnapshot(u, targets);
 
   /* ---- Diet ---- */
-  document.getElementById('dietIntro').textContent =
-    `Aim for ~${targets.calories} kcal/day across 4 meals. Mix and match the suggested foods.`;
-  document.getElementById('dietPlan').innerHTML = buildDietPlan(targets, p.diet).map(meal => `
-    <div class="meal"><h4>${meal.name}</h4><div class="kcal">~${meal.kcal} kcal</div>
-      <ul class="food-list">${meal.foods.map(f => `<li><span>${f}</span></li>`).join('')}</ul></div>`).join('');
+  renderDiet(u, targets);
   renderMealLog(u, targets);
 
   /* ---- Cardio ---- */
@@ -389,6 +523,56 @@ function renderQuickSnapshot(u, targets) {
     <div class="quick" data-go="weights"><div class="q-emoji">🔥</div><div class="q-big">${currentStreak(u)}</div><div class="q-lbl">Day streak</div></div>`;
   grid.querySelectorAll('.quick').forEach(c => c.addEventListener('click', () => showView(c.dataset.go)));
 }
+
+/* -----------------------------------------------------------
+   9b. INDIAN DIET PLAN (cards + recipes + shuffle)
+----------------------------------------------------------- */
+let planOffset = 0; // bumped by the "New meals" button to swap dishes
+
+function renderDiet(u, targets) {
+  const p = u.profile;
+  const plan = buildIndianPlan(targets, p.diet, planOffset);
+  const dayKcal = plan.reduce((s, mm) => s + mm.kcal, 0);
+  const dayProt = plan.reduce((s, mm) => s + mm.protein, 0);
+  const dietLabel = { none: 'veg & non-veg', vegetarian: 'vegetarian', vegan: 'vegan' }[p.diet];
+
+  document.getElementById('dietIntro').textContent =
+    `${dietLabel} Indian meals matched to your ~${targets.calories} kcal/day. Tap “How to make it” for the recipe.`;
+
+  document.getElementById('dietSummary').innerHTML =
+    `Day total ≈ <strong>${dayKcal}</strong> kcal · <strong>${dayProt}g</strong> protein
+     <span class="muted-small">(target ${targets.calories} kcal · ${targets.macros.protein}g)</span>`;
+
+  // Honest gap helper — Indian veg diets are often short on protein/calories.
+  const protGap = targets.macros.protein - dayProt;
+  const kcalGap = targets.calories - dayKcal;
+  const bits = [];
+  if (protGap > 15) bits.push(`about <strong>${protGap}g more protein</strong> (add curd, paneer, sprouts, soya chunks, or a whey/soy scoop)`);
+  if (kcalGap > 200) bits.push(`<strong>~${kcalGap} more kcal</strong> (a bigger portion or an extra snack)`);
+  const tip = bits.length ? `<p class="diet-tip">💡 To fully hit your targets, add ${bits.join(' and ')}.</p>` : '';
+
+  document.getElementById('dietPlan').innerHTML = tip + plan.map(mm => `
+    <div class="meal">
+      <div class="meal-head">
+        <h4>${mm.meal} · <span class="meal-dish">${mm.name}</span></h4>
+        <span class="meal-time">⏰ ${mm.time}</span>
+      </div>
+      <div class="kcal">~${mm.kcal} kcal · ${mm.protein}g protein</div>
+      <ul class="food-list">
+        ${mm.items.map(it => `<li><span>${it.label}</span><span class="scheme">${it.kcal} kcal</span></li>`).join('')}
+      </ul>
+      <details class="recipe">
+        <summary>📖 How to make it</summary>
+        <ol class="recipe-steps">${mm.recipe.map(s => `<li>${s}</li>`).join('')}</ol>
+      </details>
+    </div>`).join('');
+}
+
+document.getElementById('shuffleDiet').addEventListener('click', () => {
+  planOffset++;
+  const u = DB.current();
+  renderDiet(u, buildTargets(u.profile));
+});
 
 /* -----------------------------------------------------------
    10. MEAL / CALORIE LOG

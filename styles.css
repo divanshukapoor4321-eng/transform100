@@ -197,6 +197,22 @@ input:focus, select:focus { outline: 2px solid var(--primary); border-color: tra
 }
 .meal h4, .workout-day h4, .cardio-block h4 { font-size: 1.05rem; margin-bottom: 4px; }
 .meal .kcal { color: var(--accent); font-size: .9rem; margin-bottom: 10px; }
+
+/* Diet toolbar + meal cards (Indian plan) */
+.diet-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
+.diet-summary { color: var(--text); font-size: .98rem; }
+.diet-summary .muted-small { color: var(--muted); font-size: .85rem; }
+.meal-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.meal-dish { color: var(--primary); font-weight: 700; }
+.meal-time { color: var(--muted); font-size: .85rem; white-space: nowrap; }
+.recipe { margin-top: 12px; border-top: 1px solid var(--border); padding-top: 10px; }
+.recipe summary { cursor: pointer; color: var(--accent); font-weight: 600; list-style: none; user-select: none; }
+.recipe summary::-webkit-details-marker { display: none; }
+.recipe summary::before { content: '▸ '; }
+.recipe[open] summary::before { content: '▾ '; }
+.recipe-steps { margin: 10px 0 2px; padding-left: 20px; color: var(--text); }
+.recipe-steps li { padding: 4px 0; }
+.diet-tip { background: rgba(255,106,61,.12); border: 1px solid rgba(255,106,61,.4); color: #ffd9cc; padding: 12px 14px; border-radius: 12px; margin-bottom: 16px; font-size: .92rem; }
 .food-list, .ex-list { list-style: none; }
 .food-list li, .ex-list li {
   padding: 8px 0; border-bottom: 1px dashed var(--border);
